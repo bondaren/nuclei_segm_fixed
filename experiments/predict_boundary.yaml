@@ -1,0 +1,35 @@
+# path to the checkpoint file containing the model
+model_path: '/g/kreshuk/wolny/workspace/FOR2581-segmentation/TUM-Ovules/networks/experiments/boundary_with_affinities_bce_crg_fmaps32_ds2x/best_checkpoint.pytorch'
+prediction_channel: 0
+# model configuration
+model:
+  name: UNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 10
+  # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
+  layer_order: crg
+  # initial number of feature maps
+  f_maps: 32
+  # number of groups in the groupnorm
+  num_groups: 8
+  # apply element-wise nn.Sigmoid after the final 1x1x1 convolution, otherwise apply nn.Softmax
+  final_sigmoid: true
+# specify the test datasets
+datasets:
+  # patch size given to the network (adapt to fit in your GPU mem)
+  patch: [128, 224, 224]
+  # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
+  stride: [100, 200, 200]
+  # path to the raw data within the H5
+  raw_internal_path: /raw
+  # paths to the datasets
+  test_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/vlad_boundary.h5'
+  transformer:
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true
