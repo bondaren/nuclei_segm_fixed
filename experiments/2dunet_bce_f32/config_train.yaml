@@ -51,7 +51,7 @@ lr_scheduler:
   name: ReduceLROnPlateau
   mode: max
   factor: 0.5
-  patience: 40
+  patience: 60
 # data loaders configuration
 loaders:
   # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
