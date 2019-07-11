@@ -2,8 +2,6 @@
 manual_seed: 0
 # model configuration
 model:
-  # train on GPU1
-  cuda_visible_devices: 1
   # model class
   name: UNet2D
   # number of input channels to the model

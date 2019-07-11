@@ -12,8 +12,6 @@ def load_config():
     parser.add_argument('--config', type=str, help='Path to the YAML config file', required=True)
     args = parser.parse_args()
     config = _load_config_yaml(args.config)
-    if 'cuda_visible_devices' in config:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(config['cuda_visible_devices'])
     # Get a device to train on
     device = config.get('device', DEFAULT_DEVICE)
     config['device'] = torch.device(device)
