@@ -1,0 +1,10 @@
+name: vlad-nuclei
+dependencies:
+  - numpy
+  - pytorch
+  - torchvision
+  - tensorboardx
+  - h5py
+  - scipy
+  - scikit-image
+  - pytest
