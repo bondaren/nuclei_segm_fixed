@@ -30,7 +30,9 @@ datasets:
   num_workers: 8
   # paths to the datasets
   test_path:
-    - 'resources/random_label3D.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/test/2019_05_18_test1.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/test/2019_05_19_test2.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/test/nuclei_08_gt.h5'
   transformer:
     test:
       raw:
