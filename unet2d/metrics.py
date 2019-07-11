@@ -6,7 +6,46 @@ from unet2d.utils import get_logger
 
 LOGGER = get_logger('EvalMetric')
 
-SUPPORTED_METRICS = ['dice', 'iou']
+
+def compute_per_channel_dice(input, target, epsilon=1e-5, ignore_index=None, weight=None):
+    # assumes that input is a normalized probability
+
+    # input and target shapes must match
+    assert input.size() == target.size(), "'input' and 'target' must have the same shape"
+
+    # mask ignore_index if present
+    if ignore_index is not None:
+        mask = target.clone().ne_(ignore_index)
+        mask.requires_grad = False
+
+        input = input * mask
+        target = target * mask
+
+    input = flatten(input)
+    target = flatten(target)
+
+    target = target.float()
+    # Compute per channel Dice Coefficient
+    intersect = (input * target).sum(-1)
+    if weight is not None:
+        intersect = weight * intersect
+
+    denominator = (input + target).sum(-1)
+    return 2. * intersect / denominator.clamp(min=epsilon)
+
+
+def flatten(tensor):
+    """Flattens a given tensor such that the channel axis is first.
+    The shapes are transformed as follows:
+       (N, C, H, W) -> (C, N * * H * W)
+    """
+    C = tensor.size(1)
+    # new axis order
+    axis_order = (1, 0) + tuple(range(2, tensor.dim()))
+    # Transpose: (N, C, H, W) -> (C, N, H, W)
+    transposed = tensor.permute(axis_order)
+    # Flatten: (C, N, H, W) -> (C, N *  H * W)
+    return transposed.view(C, -1)
 
 
 class DiceCoefficient:
@@ -131,11 +170,11 @@ class MeanIoU:
         _, max_index = torch.max(input, dim=0, keepdim=True)
         return torch.zeros_like(input, dtype=torch.uint8).scatter_(0, max_index, 1)
 
-    def _jaccard_index(self, prediction, target):
+    def _jaccard_index(self, prediction, target, epsilon=1e-5):
         """
         Computes IoU for a given target and prediction tensors
         """
-        return torch.sum(prediction & target).float() / torch.sum(prediction | target).float()
+        return torch.sum(prediction & target).float() / torch.sum(prediction | target).float().clamp(min=epsilon)
 
 
 def get_evaluation_metric(config):
