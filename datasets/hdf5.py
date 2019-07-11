@@ -324,9 +324,12 @@ def get_test_loaders(config):
     """
 
     def my_collate(batch):
+        # batch is of type list(tuple(patch, index))
         error_msg = "batch must contain tensors or slice; found {}"
         if isinstance(batch[0], torch.Tensor):
             return torch.stack(batch, 0)
+        elif isinstance(batch[0], tuple) and isinstance(batch[0][0], slice):
+            return list(batch)
         elif isinstance(batch[0], slice):
             return batch[0]
         elif isinstance(batch[0], collections.Sequence):

@@ -11,11 +11,11 @@ model:
   # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
   layer_order: crg
   # feature maps scale factor
-  f_maps: 32
+  f_maps: 16
   # number of groups in the groupnorm
   num_groups: 8
   # apply element-wise nn.Sigmoid after the final 1x1 convolution, otherwise apply nn.Softmax
-  final_sigmoid: false
+  final_sigmoid: true
 # trainer configuration
 trainer:
   # path to the checkpoint directory
@@ -23,7 +23,7 @@ trainer:
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null
   # how many iterations between validations
-  validate_after_iters: 200
+  validate_after_iters: 20
   # how many iterations between tensorboard logging
   log_after_iters: 10
   # max number of epochs
@@ -63,7 +63,7 @@ loaders:
   # validation stride (validation patches doesn't need to overlap)
   val_stride: [128, 128]
   # batch size
-  batch_size: 32
+  batch_size: 16
   # path to the raw data within the H5
   raw_internal_path: raw
   # path to the the label data withtin the H5
