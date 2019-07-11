@@ -19,7 +19,7 @@ model:
 # trainer configuration
 trainer:
   # path to the checkpoint directory
-  checkpoint_dir: 2dunet
+  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/2dunet_bce_f32'
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null
   # how many iterations between validations
