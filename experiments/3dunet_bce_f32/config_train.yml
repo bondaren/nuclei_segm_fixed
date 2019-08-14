@@ -73,7 +73,7 @@ loaders:
   # path to the raw data within the H5
   raw_internal_path: /raw
   # path to the the label data withtin the H5
-  label_internal_path: /label_uint16_smooth
+  label_internal_path: /label
   # paths to the training datasts
   train_path:
     - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/train_dataset_090819.h5'
