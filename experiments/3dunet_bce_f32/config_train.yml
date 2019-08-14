@@ -1,0 +1,129 @@
+# use a fixed random seed to guarantee that when you run the code twice you will get the same outcome
+manual_seed: 0
+model:
+  name: UNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 10
+  # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
+  layer_order: crg
+  # initial number of feature maps
+  f_maps: 32
+  # number of groups in the groupnorm
+  num_groups: 8
+  # apply element-wise nn.Sigmoid after the final 1x1x1 convolution, otherwise apply nn.Softmax
+  final_sigmoid: true
+# loss function to be used during training (ce - CrossEntropy)
+loss:
+  name: BCEWithLogitsLoss
+  # A manual rescaling weight given to each class.
+  loss_weight: null
+  # a target value that is ignored and does not contribute to the input gradient
+  ignore_index: null
+  # skip the last channel in the target (i.e. when last channel contains data not relevant for the loss)
+  skip_last_target: true
+optimizer:
+  # initial learning rate
+  learning_rate: 0.0002
+  # weight decay
+  weight_decay: 0.0001
+# evaluation metric
+eval_metric:
+  # use AdaptedRandError metric
+  name: BoundaryAdaptedRandError
+  # do not invert pmaps before computing connected components
+  invert_pmaps: False
+  # probability maps threshold
+  threshold: 0.5
+  # use the last target channel to compute the metric
+  use_last_target: true
+  # use only the first channel for computing the metric
+  use_first_input: true
+lr_scheduler:
+  name: ReduceLROnPlateau
+  # make sure to use the 'min' mode cause lower AdaptedRandError is better
+  mode: min
+  factor: 0.5
+  patience: 20
+trainer:
+  # model with lower eval score is considered better
+  eval_score_higher_is_better: False
+  # path to the checkpoint directory
+  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f32'
+  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
+  resume: null
+  # how many iterations between validations
+  validate_after_iters: 100
+  # how many iterations between tensorboard logging
+  log_after_iters: 50
+  # max number of epochs
+  epochs: 300
+  # max number of iterations
+  iters: 60000
+loaders:
+   # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
+  train_patch: [90, 192, 192]
+  # train stride between patches (make sure that the training patches overlap)
+  train_stride: [20, 40, 40]
+  # validation patch (can be bigger than train patch since there is no backprop)
+  val_patch: [90, 192, 192]
+  # validation stride (validation patches doesn't need to overlap)
+  val_stride: [90, 192, 192]
+  # path to the raw data within the H5
+  raw_internal_path: /raw
+  # path to the the label data withtin the H5
+  label_internal_path: /label_uint16_smooth
+  # paths to the training datasts
+  train_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/train_dataset_090819.h5'
+  # paths to the validation datasets
+  val_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/val_dataset_090819..h5'
+  # how many subprocesses to use for data loading
+  num_workers: 16
+  # data augmentation
+  transformer:
+    train:
+      raw:
+        - name: Normalize
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 15
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 3
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 15
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 0
+        - name: LabelToMaskAndAffinities
+          xy_offsets: [1, 9, 27]
+          z_offsets: [1, 2, 3]
+          # append original ground truth labels to the last channel (to be able to compute the AP)
+          append_label: true
+        - name: ToTensor
+          expand_dims: false
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: LabelToMaskAndAffinities
+          xy_offsets: [1, 9, 27]
+          z_offsets: [1, 2, 3]
+          append_label: true
+        - name: ToTensor
+          expand_dims: false
