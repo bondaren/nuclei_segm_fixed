@@ -79,7 +79,7 @@ loaders:
     - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/train_dataset_090819.h5'
   # paths to the validation datasets
   val_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/val_dataset_090819..h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/val_dataset_090819.h5'
   # how many subprocesses to use for data loading
   num_workers: 16
   # data augmentation
