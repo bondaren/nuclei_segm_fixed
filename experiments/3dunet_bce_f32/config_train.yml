@@ -47,7 +47,7 @@ lr_scheduler:
   factor: 0.5
   patience: 20
 trainer:
-  # model with lower eval score is considered better
+  # model with lower eval score (AdapterRandError) is considered better
   eval_score_higher_is_better: False
   # path to the checkpoint directory
   checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f32'
