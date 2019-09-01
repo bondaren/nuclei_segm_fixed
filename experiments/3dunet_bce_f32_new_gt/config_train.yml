@@ -67,9 +67,9 @@ loaders:
   # train stride between patches (make sure that the training patches overlap)
   train_stride: [20, 40, 40]
   # validation patch (can be bigger than train patch since there is no backprop)
-  val_patch: [90, 192, 192]
+  val_patch: [116, 140, 192]
   # validation stride (validation patches doesn't need to overlap)
-  val_stride: [90, 192, 192]
+  val_stride: [116, 140, 192]
   # path to the raw data within the H5
   raw_internal_path: /raw
   # path to the the label data withtin the H5
