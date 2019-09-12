@@ -4,8 +4,6 @@ import numpy as np
 from skimage import measure
 
 element_size_um = np.array([1., 0.17297205, 0.17297205])
-in_path = '/g/kreshuk/wolny/Datasets/Vladyslav/test/test1_predictions.h5'
-out_path = '/g/kreshuk/wolny/Datasets/Vladyslav/test/test1_segm.h5'
 
 for in_path in glob.glob('/g/kreshuk/wolny/Datasets/Vladyslav/antibody/*predictions.h5'):
     with h5py.File(in_path, 'r') as f:
