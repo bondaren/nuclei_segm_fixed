@@ -1,3 +1,4 @@
+import os
 import glob
 import h5py
 import numpy as np
@@ -11,7 +12,7 @@ for in_path in glob.glob('/g/kreshuk/wolny/Datasets/Vladyslav/antibody/*predicti
 
         preds = f['predictions'][0]
 
-        out_path = in_path.split('_')[0] + '_segm.h5'
+        out_path = os.path.splitext(in_path)[0] + '_segm.h5'
 
         with h5py.File(out_path, 'w') as g:
             thresholds = [0.5, 0.65, 0.8]
