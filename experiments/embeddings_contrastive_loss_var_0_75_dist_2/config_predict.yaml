@@ -1,0 +1,43 @@
+model_path: '/g/kreshuk/wolny/workspace/FOR2581-segmentation/TUM-Ovules/networks/experiments/embeddings_contrastive_loss_var_0_75_dist_2/best_checkpoint.pytorch'
+# model configuration
+model:
+  name: ResidualUNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 16
+  # determines the order of operators in a single layer (cge - Conv3d+GroupNorm+ELU)
+  layer_order: cge
+  # initial number of feature maps
+  f_maps: 8
+  # number of groups in the groupnorm
+  num_groups: 4
+  skip_final_activation: true
+  # ignored due to skip_final_activation being present
+  final_sigmoid: true
+# predictor configuration
+predictor:
+  name: EmbeddingsPredictor
+  # clustering algorithm
+  clustering: meanshift
+  # the minimum size of clusters
+  bandwidth: 0.75
+  # IoU threshold for patch stitching
+  iou_threshold: 0.5
+# specify the test datasets
+datasets:
+  # patch size given to the network (adapt to fit in your GPU mem)
+  patch: [96, 128, 128]
+  # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
+  stride: [72, 96, 96]
+  # path to the raw data within the H5
+  raw_internal_path: /raw
+  # paths to the datasets
+  test_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/val_final_090819.h5'
+  transformer:
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true

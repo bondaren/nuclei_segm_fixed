@@ -1,0 +1,131 @@
+# use a fixed random seed to guarantee that when you run the code twice you will get the same outcome
+manual_seed: 0
+model:
+  name: ResidualUNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 16
+  # determines the order of operators in a single layer (cge - Conv3d+GroupNorm+ELU)
+  layer_order: cge
+  # initial number of feature maps
+  f_maps: 8
+  # number of groups in the groupnorm
+  num_groups: 4
+  skip_final_activation: true
+  # ignored due to skip_final_activation being present
+  final_sigmoid: true
+# loss function to be used during training (ce - CrossEntropy)
+loss:
+  name: ContrastiveLoss
+  delta_var: 0.75
+  delta_dist: 2.0
+  norm: 'fro'
+  alpha: 1.0
+  beta: 1.0
+  gamma: 0.001
+optimizer:
+  # initial learning rate
+  learning_rate: 0.0001
+  # weight decay
+  weight_decay: 0.0001
+# evaluation metric
+eval_metric:
+  # adapted Rand error based on clustered embeddings
+  name: EmbeddingsMeanShiftAdaptedRandError
+  bandwidth: 0.75
+  # save segmentation plots
+  save_plots: true
+  plots_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/embeddings_contrastive_loss_var_0_75_dist_2/plots'
+lr_scheduler:
+  name: ReduceLROnPlateau
+  # make sure to use the 'min' mode cause lower AdaptedRandError is better
+  mode: min
+  factor: 0.5
+  patience: 50
+trainer:
+  # model with lower eval score is considered better
+  eval_score_higher_is_better: False
+  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/embeddings_contrastive_loss_var_0_75_dist_2'
+  # tensorboard transformer: extract 3 main principal components and use them as a RGB channels to plot embeddings
+  tensorboard_formatter:
+    name: EmbeddingsTensorboardFormatter
+    # plot cumulative explained variance of the PCA components
+    plot_variance: True
+  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
+  resume: null
+  # how many iterations between validations
+  validate_after_iters: 1000
+  # how many iterations between tensorboard logging
+  log_after_iters: 100
+  # max number of epochs
+  epochs: 300
+  # max number of iterations
+  iters: 100000
+  # skip training phase validation
+  skip_train_validation: True
+loaders:
+  train_slice_builder: EmbeddingsSliceBuilder
+  val_slice_builder: RandomFilterSliceBuilder
+  # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
+  # WARN: it's better to get more in Z than XY in order to reduce the number of cells in the patch
+  train_patch: [64, 96, 96]
+  # train stride between patches (make sure that the training patches overlap)
+  train_stride: [32, 48, 48]
+  # validation patch (can be bigger than train patch since there is no backprop)
+  val_patch: [64, 96, 96]
+  # validation stride (validation patches doesn't need to overlap)
+  val_stride: [64, 96, 96]
+  # path to the raw data within the H5
+  raw_internal_path: /raw
+  # path to the the label data withtin the H5
+  label_internal_path: /label
+  # paths to the training datasets
+  train_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/train1_final_090819.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/train2_final_090819.h5'
+  # paths to the validation datasets
+  val_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/gt_nuclei/3dUnet/val_final_090819.h5'
+  # how many subprocesses to use for data loading
+  num_workers: 16
+  # data augmentation
+  transformer:
+    train:
+      raw:
+        - name: Normalize
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 15
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 3
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 15
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 0
+        - name: Relabel
+        - name: ToTensor
+          expand_dims: false
+          dtype: 'long'
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: Relabel
+        - name: ToTensor
+          expand_dims: false
+          dtype: 'long'
