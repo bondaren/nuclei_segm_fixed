@@ -119,9 +119,7 @@ loaders:
           # append original ground truth labels to the last channel (to be able to compute the AP)
           append_label: true
           # blur the boundaries
-          blur: true
-          # stddev of Gaussian kernel
-          sigma: 1.2
+          blur: false
         - name: ToTensor
           expand_dims: false
     test:
@@ -135,8 +133,6 @@ loaders:
           # append original ground truth labels to the last channel (to be able to compute the AP)
           append_label: true
           # blur the boundaries
-          blur: true
-          # stddev of Gaussian kernel
-          sigma: 1.2
+          blur: false
         - name: ToTensor
           expand_dims: false
