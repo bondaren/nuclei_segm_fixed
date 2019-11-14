@@ -1,0 +1,142 @@
+# use a fixed random seed to guarantee that when you run the code twice you will get the same outcome
+manual_seed: 0
+model:
+  name: UNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels: segmentation mask, 'thick' boundaries, 'inner' boundaries, 'outer' boundaries
+  out_channels: 4
+  # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
+  layer_order: cgr
+  # initial number of feature maps
+  f_maps: 16
+  # number of groups in the groupnorm
+  num_groups: 8
+  # apply element-wise nn.Sigmoid after the final 1x1x1 convolution, otherwise apply nn.Softmax
+  final_sigmoid: true
+# loss function to be used during training
+loss:
+  name: BCEWithLogitsLoss
+  # A manual rescaling weight given to each class.
+  loss_weight: null
+  # a target value that is ignored and does not contribute to the input gradient
+  ignore_index: null
+  # skip the last channel in the target (i.e. when last channel contains data not relevant for the loss)
+  skip_last_target: true
+optimizer:
+  # initial learning rate
+  learning_rate: 0.00005
+  # weight decay
+  weight_decay: 0.00001
+# evaluation metric
+eval_metric:
+  # use AdaptedRandError metric
+  name: GenericAdaptedRandError
+  save_plots: True
+  input_channels: [0, 1, 2, 3]
+  # do not invert pmaps before computing connected components
+  invert_channels: [1, 2, 3]
+  # probability maps threshold
+  threshold: 0.5
+  # use the last target channel to compute the metric
+  use_last_target: true
+lr_scheduler:
+  name: ReduceLROnPlateau
+  # make sure to use the 'min' mode cause lower AdaptedRandError is better
+  mode: min
+  factor: 0.5
+  patience: 40
+trainer:
+  # model with lower eval score (AdapterRandError) is considered better
+  eval_score_higher_is_better: False
+  # path to the checkpoint directory
+  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_nuc_ab1'
+  # path to latest checkpoint; if provided the training will be resumed from that checkpoint
+  resume: null
+  # how many iterations between validations
+  validate_after_iters: 1000
+  # how many iterations between tensorboard logging
+  log_after_iters: 100
+  # max number of epochs
+  epochs: 500
+  # max number of iterations
+  iters: 100000
+loaders:
+  train_slice_builder: FilterSliceBuilder
+  val_slice_builder: FilterSliceBuilder
+   # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
+  train_patch: [90, 192, 192]
+  # train stride between patches (make sure that the training patches overlap)
+  train_stride: [10, 40, 40]
+  # validation patch (can be bigger than train patch since there is no backprop)
+  val_patch: [120, 192, 192]
+  # validation stride (validation patches doesn't need to overlap)
+  val_stride: [120, 192, 192]
+  # path to the raw data within the H5
+  raw_internal_path: /raw
+  # path to the the label data withtin the H5
+  label_internal_path: /cc
+  # paths to the training datasts
+  train_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_0_test0.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab1_test1.h5'
+  # paths to the validation datasets
+  val_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab2_test2.h5'
+  # how many subprocesses to use for data loading
+  num_workers: 4
+  # data augmentation
+  transformer:
+    train:
+      raw:
+        - name: Normalize
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 20
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 3
+        - name: RandomContrast
+        - name: AdditiveGaussianNoise
+        - name: AdditivePoissonNoise
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: RandomFlip
+        - name: RandomRotate90
+        - name: RandomRotate
+          # rotate only in ZY plane due to anisotropy
+          axes: [[2, 1]]
+          angle_spectrum: 20
+          mode: reflect
+        - name: ElasticDeformation
+          spline_order: 0
+        - name: BlobsWithBoundary
+          mode: ['thick', 'inner', 'outer']
+          # append original ground truth labels to the last channel (to be able to compute the AP)
+          append_label: true
+          # blur the boundaries
+          blur: true
+          # stddev of Gaussian kernel
+          sigma: 1.2
+        - name: ToTensor
+          expand_dims: false
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true
+      label:
+        - name: BlobsWithBoundary
+          mode: ['thick', 'inner', 'outer']
+          # append original ground truth labels to the last channel (to be able to compute the AP)
+          append_label: true
+          # blur the boundaries
+          blur: true
+          # stddev of Gaussian kernel
+          sigma: 1.2
+        - name: ToTensor
+          expand_dims: false
