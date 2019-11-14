@@ -32,7 +32,7 @@ optimizer:
 eval_metric:
   # use AdaptedRandError metric
   name: GenericAdaptedRandError
-  save_plots: True
+  save_plots: False
   input_channels: [0, 1, 2, 3]
   # do not invert pmaps before computing connected components
   invert_channels: [1, 2, 3]
