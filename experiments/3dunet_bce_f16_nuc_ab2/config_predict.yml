@@ -1,0 +1,35 @@
+model_path: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_nuc_ab2/best_checkpoint.pytorch'
+# take only channel 0 for prediction (channels 1-9 contain affinities used as an auxiliary task during training)
+prediction_channel: 0
+# model configuration
+model:
+  name: UNet3D
+  # number of input channels to the model
+  in_channels: 1
+  # number of output channels
+  out_channels: 4
+  # determines the order of operators in a single layer (crg - Conv3d+ReLU+GroupNorm)
+  layer_order: cgr
+  # initial number of feature maps
+  f_maps: 16
+  # number of groups in the groupnorm
+  num_groups: 8
+  # apply element-wise nn.Sigmoid after the final 1x1x1 convolution, otherwise apply nn.Softmax
+  final_sigmoid: true
+# specify the test datasets
+datasets:
+  # patch size given to the network (adapt to fit in your GPU mem)
+  patch: [96, 256, 256]
+  # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
+  stride: [60, 180, 180]
+  # path to the raw data within the H5
+  raw_internal_path: raw
+  # paths to the datasets
+  test_path:
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab2_test2.h5'
+  transformer:
+    test:
+      raw:
+        - name: Normalize
+        - name: ToTensor
+          expand_dims: true

@@ -50,7 +50,7 @@ trainer:
   # model with lower eval score (AdapterRandError) is considered better
   eval_score_higher_is_better: False
   # path to the checkpoint directory
-  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_nuc_ab1'
+  checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_nuc_ab2'
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
   resume: null
   # how many iterations between validations
@@ -78,10 +78,10 @@ loaders:
   label_internal_path: /label
   # paths to the training datasts
   train_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab1_test1.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab2_test2.h5'
   # paths to the validation datasets
   val_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab2_test2.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab1_test1.h5'
   # how many subprocesses to use for data loading
   num_workers: 4
   # data augmentation
