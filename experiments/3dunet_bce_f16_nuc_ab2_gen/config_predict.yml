@@ -24,7 +24,7 @@ datasets:
   raw_internal_path: raw
   # paths to the datasets
   test_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab2_test2.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/GT_Ab1_test1.h5'
   transformer:
     test:
       raw:
