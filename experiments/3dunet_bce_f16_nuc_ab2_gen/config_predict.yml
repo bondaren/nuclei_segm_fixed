@@ -1,6 +1,4 @@
 model_path: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_nuc_ab2_gen/best_checkpoint.pytorch'
-# take only channel 0 for prediction (channels 1-9 contain affinities used as an auxiliary task during training)
-prediction_channel: 0
 # model configuration
 model:
   name: UNet3D
