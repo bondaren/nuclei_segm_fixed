@@ -65,7 +65,7 @@ loaders:
   train_slice_builder: FilterSliceBuilder
   val_slice_builder: FilterSliceBuilder
    # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
-  train_patch: [100, 224, 224]
+  train_patch: [100, 200, 200]
   # train stride between patches (make sure that the training patches overlap)
   train_stride: [10, 40, 40]
   # validation patch (can be bigger than train patch since there is no backprop)

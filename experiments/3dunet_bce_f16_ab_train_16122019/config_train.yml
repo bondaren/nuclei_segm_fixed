@@ -43,7 +43,7 @@ lr_scheduler:
   # make sure to use the 'min' mode cause lower AdaptedRandError is better
   mode: min
   factor: 0.5
-  patience: 20
+  patience: 80
 trainer:
   # model with lower eval score (AdapterRandError) is considered better
   eval_score_higher_is_better: False
@@ -63,13 +63,13 @@ loaders:
   train_slice_builder: FilterSliceBuilder
   val_slice_builder: FilterSliceBuilder
    # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
-  train_patch: [90, 192, 192]
+  train_patch: [100, 200, 200]
   # train stride between patches (make sure that the training patches overlap)
   train_stride: [10, 40, 40]
   # validation patch (can be bigger than train patch since there is no backprop)
-  val_patch: [120, 192, 192]
+  val_patch: [128, 256, 256]
   # validation stride (validation patches doesn't need to overlap)
-  val_stride: [120, 192, 192]
+  val_stride: [100, 200, 200]
   # path to the raw data within the H5
   raw_internal_path: /raw
   # path to the the label data withtin the H5
