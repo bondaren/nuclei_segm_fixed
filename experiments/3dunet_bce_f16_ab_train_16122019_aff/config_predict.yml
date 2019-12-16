@@ -17,9 +17,9 @@ model:
 # specify the test datasets
 datasets:
   # patch size given to the network (adapt to fit in your GPU mem)
-  patch: [96, 256, 256]
+  patch: [128, 256, 256]
   # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
-  stride: [60, 180, 180]
+  stride: [60, 120, 120]
   # path to the raw data within the H5
   raw_internal_path: raw
   # paths to the datasets
