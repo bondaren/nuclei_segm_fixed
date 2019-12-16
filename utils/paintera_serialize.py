@@ -21,9 +21,10 @@ def serialize_cremi(path, tmp_folder):
 
 if __name__ == '__main__':
     in_files = [
-        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT_instances/GT_0_test0.n5',
-        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT_instances/GT_Ab1_test1.n5',
-        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT_instances/GT_Ab2_test2.n5'
+        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/train/CT_Ab1_train.n5',
+        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/train/CT_Ab2_train.n5',
+        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/test/GT_Ab1_test.n5',
+        '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/test/GT_Ab2_test.n5',
     ]
     for t, input_path in enumerate(in_files):
         print(f'Processing {input_path}...')
@@ -39,3 +40,5 @@ if __name__ == '__main__':
             cc = measure.label(label64, connectivity=2)
             cc = cc.astype('uint16')
             f.create_dataset('label', data=cc, compression='gzip')
+
+        convert_to_h5(input_path, output_path, 'raw/s0', 'raw', n_threads=8, compression='gzip')

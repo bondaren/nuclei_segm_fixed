@@ -1,22 +1,18 @@
-from scipy import ndimage as ndi
-
-from scipy.ndimage import gaussian_filter
-from skimage.morphology import watershed
-from skimage.feature import peak_local_max
-from skimage import measure
+import glob
 
 import h5py
 import numpy as np
-import glob
+from scipy import ndimage as ndi
+from scipy.ndimage import gaussian_filter
+from skimage.feature import peak_local_max
+from skimage.morphology import watershed
 
-for in_file in glob.glob('/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/*.h5'):
+for in_file in glob.glob('/home/adrian/workspace/ilastik-datasets/Vladyslav/GT_instances_05_12/CT_Ab2_train.h5'):
     print(f'Processing {in_file}...')
 
     with h5py.File(in_file, 'r+') as f:
         label = f['label'][...]
-        if 'dtw' in f:
-            del f['dtw']
-
+        label = (label > 0).astype('uint8')
         print('Distance transform...')
         # Generate the markers as local maxima of the distance to the background
         distance = ndi.distance_transform_edt(label)
@@ -39,7 +35,3 @@ for in_file in glob.glob('/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/*
                 labels = labels.astype('uint16')
 
             f.create_dataset(f'dt_watershed_{i}', data=labels, compression='gzip')
-
-        # save connected components
-        cc = measure.label(label, connectivity=1)
-        f.create_dataset('cc', data=cc.astype('uint16'), compression='gzip')
