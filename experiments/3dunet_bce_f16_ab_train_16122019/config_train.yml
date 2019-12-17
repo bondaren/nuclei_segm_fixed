@@ -109,7 +109,7 @@ loaders:
         - name: ElasticDeformation
           spline_order: 0
         - name: StandardLabelToBoundary
-          append_label: true
+          append_label: false
           blur: false
         - name: ToTensor
           expand_dims: false
@@ -120,7 +120,7 @@ loaders:
           expand_dims: true
       label:
         - name: StandardLabelToBoundary
-          append_label: true
+          append_label: false
           blur: false
         - name: ToTensor
           expand_dims: false
