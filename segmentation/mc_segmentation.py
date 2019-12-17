@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
     print(f'Running MC...')
     mc = segment_volume(pmaps)
+    mc = mc.astype('uint16')
     print(f'Saving results to: {out_file}')
 
     with h5py.File(out_file, 'w') as f:

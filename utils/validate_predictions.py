@@ -47,8 +47,22 @@ metrics = {
 }
 
 if __name__ == "__main__":
-    gt_files = ['/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/test/GT_Ab2_test.h5']
-    seg_files = ['/home/adrian/workspace/ilastik-datasets/Vladyslav/GT/test/GT_Ab2_test.h5']
+    gt_files = [
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test.h5',
+    ]
+    seg_files = [
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test_predictions_mc.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test_predictions_mws.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test_predictions_threshold.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test_predictions_mc.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test_predictions_mws.h5',
+        '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test_predictions_threshold.h5'
+    ]
 
     gt_seg_cache = {}
 
