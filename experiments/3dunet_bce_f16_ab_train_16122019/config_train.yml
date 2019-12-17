@@ -30,23 +30,16 @@ optimizer:
   weight_decay: 0.00001
 # evaluation metric
 eval_metric:
-  # use AdaptedRandError metric
-  name: BoundaryAdaptedRandError
-  # probability maps threshold
-  threshold: 0.4
-  # use the last target channel to compute the metric
-  use_last_target: true
-  # use only the first channel for computing the metric
-  use_first_input: true
+  name: DiceCoefficient
 lr_scheduler:
   name: ReduceLROnPlateau
-  # make sure to use the 'min' mode cause lower AdaptedRandError is better
-  mode: min
+  # higher Dice is better
+  mode: max
   factor: 0.5
   patience: 80
 trainer:
-  # model with lower eval score (AdapterRandError) is considered better
-  eval_score_higher_is_better: False
+  # higher Dice is better
+  eval_score_higher_is_better: True
   # path to the checkpoint directory
   checkpoint_dir: '/g/kreshuk/wolny/workspace/vlad-nuclei/experiments/3dunet_bce_f16_ab_train_16122019'
   # path to latest checkpoint; if provided the training will be resumed from that checkpoint
@@ -116,7 +109,6 @@ loaders:
         - name: ElasticDeformation
           spline_order: 0
         - name: StandardLabelToBoundary
-          ignore_index: 0
           append_label: true
           blur: false
         - name: ToTensor
@@ -128,7 +120,6 @@ loaders:
           expand_dims: true
       label:
         - name: StandardLabelToBoundary
-          ignore_index: 0
           append_label: true
           blur: false
         - name: ToTensor
