@@ -21,8 +21,6 @@ loss:
   loss_weight: null
   # a target value that is ignored and does not contribute to the input gradient
   ignore_index: null
-  # skip the last channel in the target (i.e. when last channel contains data not relevant for the loss)
-  skip_last_target: true
 optimizer:
   # initial learning rate
   learning_rate: 0.0001
