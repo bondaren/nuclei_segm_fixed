@@ -16,16 +16,17 @@ model:
   final_sigmoid: true
 # specify the test datasets
 datasets:
+  mirror_padding: true
   # patch size given to the network (adapt to fit in your GPU mem)
-  patch: [128, 256, 256]
+  patch: [100, 200, 200]
   # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
-  stride: [60, 120, 120]
+  stride: [50, 100, 100]
   # path to the raw data within the H5
   raw_internal_path: raw
   # paths to the datasets
   test_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab1_test.h5'
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/GT_Ab2_test.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/with_aff/GT_Ab1_test.h5'
+    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/with_aff/GT_Ab2_test.h5'
   transformer:
     test:
       raw:
