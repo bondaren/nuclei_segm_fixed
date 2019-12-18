@@ -9,7 +9,7 @@ from elf.segmentation.multicut import multicut_kernighan_lin, transform_probabil
 from elf.segmentation.watershed import distance_transform_watershed
 
 
-def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.7, ws=None):
+def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.8, ws=None):
     if ws is None:
         ws, _ = distance_transform_watershed(inp, threshold, sigma, min_size=10)
 
