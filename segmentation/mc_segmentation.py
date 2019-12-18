@@ -9,7 +9,7 @@ from elf.segmentation.multicut import multicut_kernighan_lin, transform_probabil
 from elf.segmentation.watershed import distance_transform_watershed
 
 
-def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.8, ws=None):
+def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.5, ws=None):
     if ws is None:
         ws, _ = distance_transform_watershed(inp, threshold, sigma, min_size=10)
 
@@ -30,7 +30,7 @@ def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.8, ws=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MC seg')
     parser.add_argument('--pmaps', type=str, required=True, help='path to the network predictions')
-    parser.add_arguemnt('--channel', type=int, required=True, help='Boundary pmaps channel')
+    parser.add_argument('--channel', type=int, required=True, help='Boundary pmaps channel')
     args = parser.parse_args()
 
     in_file = args.pmaps
