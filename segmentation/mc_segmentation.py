@@ -30,14 +30,16 @@ def segment_volume(inp, threshold=0.3, sigma=2.0, beta=0.8, ws=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MC seg')
     parser.add_argument('--pmaps', type=str, required=True, help='path to the network predictions')
+    parser.add_arguemnt('--channel', type=int, required=True, help='Boundary pmaps channel')
     args = parser.parse_args()
 
     in_file = args.pmaps
+    c = args.channel
     out_file = os.path.splitext(in_file)[0] + '_mc.h5'
 
     with h5py.File(in_file, 'r') as f:
         print(f'Extracting pmaps from: {in_file}')
-        pmaps = f['predictions'][1]
+        pmaps = f['predictions'][c]
 
     print(f'Running MC...')
     mc = segment_volume(pmaps)
