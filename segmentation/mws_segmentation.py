@@ -49,7 +49,7 @@ if __name__ == "__main__":
     with h5py.File(in_file, 'r') as f:
         mask = f['predictions'][0]
         mask = mask > 0.5
-        mask = np.logical_and(mask)
+        mask = np.logical_not(mask)
 
         pmaps = f['predictions'][1]
         pmaps = pmaps.astype('float32')
