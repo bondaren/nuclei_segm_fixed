@@ -69,7 +69,7 @@ if __name__ == "__main__":
     strides = [1, 6, 6]
     randomize_strides = True
 
-    print('Executing MWS...')
+    print(f'Executing MWS... Mask: {mask is None}')
     segmentation = mutex_watershed(affs, offsets, strides, randomize_strides=randomize_strides, mask=mask)
 
     print('Filtering small objects...')
