@@ -1,0 +1,5 @@
+1. Filter objects less than 500 and count (GT + segmentation)
+2. Predict boundaries (on test)
+3. Run the baselines (MW, MC, GASP) (on test)
+4. Adaptive Rand Score + counts
+5. Create screenshots

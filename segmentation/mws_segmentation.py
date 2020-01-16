@@ -47,6 +47,10 @@ if __name__ == "__main__":
 
     print('Loading affinities...')
     with h5py.File(in_file, 'r') as f:
+        mask = f['predictions'][0]
+        mask = mask > 0.5
+        mask = np.logical_and(mask)
+
         pmaps = f['predictions'][1]
         pmaps = pmaps.astype('float32')
         # load the affinities data
@@ -63,7 +67,7 @@ if __name__ == "__main__":
     randomize_strides = True
 
     print('Executing MWS...')
-    segmentation = mutex_watershed(affs, offsets, strides, randomize_strides=randomize_strides)
+    segmentation = mutex_watershed(affs, offsets, strides, randomize_strides=randomize_strides, mask=mask)
 
     print('Filtering small objects...')
     segmentation = segmentation.astype('uint32')
