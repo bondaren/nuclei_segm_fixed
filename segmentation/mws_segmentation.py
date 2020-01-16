@@ -39,6 +39,8 @@ def mutex_watershed(affs, offsets, strides,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MWS seg')
     parser.add_argument('--pmaps', type=str, required=True, help='path to the network predictions')
+    parser.add_argument("--mask", help="mask out nuclei", action="store_true")
+    parser.add_argument("--threshold", type=float, default=0.8, help="nuclei mask threshold")
     args = parser.parse_args()
 
     in_file = args.pmaps
@@ -47,9 +49,10 @@ if __name__ == "__main__":
 
     print('Loading affinities...')
     with h5py.File(in_file, 'r') as f:
-        mask = f['predictions'][0]
-        mask = mask > 0.5
-        mask = np.logical_not(mask)
+        mask = None
+        if args.mask:
+            mask = f['predictions'][0]
+            mask = mask > args.threshold
 
         pmaps = f['predictions'][1]
         pmaps = pmaps.astype('float32')
