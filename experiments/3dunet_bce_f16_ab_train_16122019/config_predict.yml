@@ -15,21 +15,33 @@ model:
   # apply element-wise nn.Sigmoid after the final 1x1x1 convolution, otherwise apply nn.Softmax
   final_sigmoid: true
 # specify the test datasets
-datasets:
+loaders:
+  # mirror pad the raw data for sharper prediction near the boundaries of the volume
   mirror_padding: true
-  # patch size given to the network (adapt to fit in your GPU mem)
-  patch: [100, 200, 200]
-  # stride between patches (make sure the the patches overlap in order to get smoother prediction maps)
-  stride: [50, 100, 100]
+  pad_width: 20
   # path to the raw data within the H5
   raw_internal_path: raw
-  # paths to the datasets
-  test_path:
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/without_aff/GT_Ab1_test.h5'
-    - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/without_aff/GT_Ab2_test.h5'
-  transformer:
-    test:
-      raw:
-        - name: Standardize
-        - name: ToTensor
-          expand_dims: true
+  # how many subprocesses to use for data loading
+  num_workers: 8
+  # test loaders configuration
+  test:
+    # paths to the test datasets; if a given path is a directory all H5 files ('*.h5', '*.hdf', '*.hdf5', '*.hd5')
+    # inside this this directory will be included as well (non-recursively)
+    file_paths:
+      - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/without_aff/GT_Ab1_test.h5'
+      - '/g/kreshuk/wolny/Datasets/Vladyslav/GT/test/without_aff/GT_Ab2_test.h5'
+
+    # SliceBuilder configuration, i.e. how to iterate over the input volume patch-by-patch
+    slice_builder:
+      # SliceBuilder class
+      name: SliceBuilder
+      # train patch size given to the network (adapt to fit in your GPU mem, generally the bigger patch the better)
+      patch_shape: [100, 200, 200]
+      # train stride between patches
+      stride_shape: [50, 100, 100]
+
+    transformer:
+        raw:
+          - name: Standardize
+          - name: ToTensor
+            expand_dims: true

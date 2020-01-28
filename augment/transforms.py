@@ -229,3 +229,82 @@ def _recover_ignore_index(input, orig, ignore_index):
         input[mask] = ignore_index
 
     return input
+
+
+from scipy.ndimage.filters import convolve
+
+class AbstractLabelToBoundary:
+    AXES_TRANSPOSE = [
+        (0, 1),  # X
+        (1, 0)  # Y
+    ]
+
+    def __init__(self, ignore_index=None, append_label=False, **kwargs):
+        """
+        :param ignore_index: label to be ignored in the output, i.e. after computing the boundary the label ignore_index
+            will be restored where is was in the patch originally
+        :param append_label: if True append the orignal ground truth labels to the last channel
+        :param sigma: standard deviation for Gaussian kernel
+        """
+        self.ignore_index = ignore_index
+        self.append_label = append_label
+
+    def __call__(self, m):
+        """
+        Extract boundaries from a given 2D label tensor.
+        :param m: input 2D tensor
+        :return: binary mask, with 1-label corresponding to the boundary and 0-label corresponding to the background
+        """
+        assert m.ndim == 2
+
+        kernels = self.get_kernels()
+        boundary_arr = [np.where(np.abs(convolve(m, kernel)) > 0, 1, 0) for kernel in kernels]
+        channels = np.stack(boundary_arr)
+        results = [_recover_ignore_index(channels[i], m, self.ignore_index) for i in range(channels.shape[0])]
+
+        if self.append_label:
+            # append original input data
+            results.append(m)
+
+        # stack across channel dim
+        return np.stack(results, axis=0)
+
+    @staticmethod
+    def create_kernel(axis, offset):
+        # create conv kernel
+        k_size = offset + 1
+        k = np.zeros((1, k_size), dtype=np.int)
+        k[0, 0] = 1
+        k[0, offset] = -1
+        return np.transpose(k, axis)
+
+    def get_kernels(self):
+        raise NotImplementedError
+
+
+class LabelToAffinities(AbstractLabelToBoundary):
+    """
+    Converts a given volumetric label array to binary mask corresponding to borders between labels (which can be seen
+    as an affinity graph: https://arxiv.org/pdf/1706.00120.pdf)
+    One specify the offsets (thickness) of the border. The boundary will be computed via the convolution operator.
+    """
+
+    def __init__(self, offsets, ignore_index=None, append_label=False, **kwargs):
+        super().__init__(ignore_index=ignore_index, append_label=append_label)
+
+        assert isinstance(offsets, list) or isinstance(offsets, tuple), 'offsets must be a list or a tuple'
+        assert all(a > 0 for a in offsets), "'offsets must be positive"
+        assert len(set(offsets)) == len(offsets), "'offsets' must be unique"
+
+        self.kernels = []
+        # create kernel for every axis-offset pair
+        for xy_offset in offsets:
+            for axis_ind, axis in enumerate(self.AXES_TRANSPOSE):
+                # create kernels for a given offset in every direction
+                self.kernels.append(self.create_kernel(axis, xy_offset))
+
+    def get_kernels(self):
+        return self.kernels
+
+
+
