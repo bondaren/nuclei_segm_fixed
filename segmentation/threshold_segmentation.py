@@ -6,7 +6,8 @@ import h5py
 import numpy as np
 
 
-def segment_volume(pmaps, th=0.9):
+def segment_volume(pmaps, th):
+    print(f'Threshold: {th}')
     mask = pmaps > th
     mask = mask.astype(np.uint8)
 
@@ -18,6 +19,7 @@ def segment_volume(pmaps, th=0.9):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TH seg')
     parser.add_argument('--pmaps', type=str, required=True, help='path to the network predictions')
+    parser.add_argument("--threshold", type=float, default=0.9, help="nuclei mask threshold")
     args = parser.parse_args()
 
     in_file = args.pmaps
@@ -27,7 +29,7 @@ if __name__ == "__main__":
         print(f'Extracting pmaps from: {in_file}')
         pmaps = f['predictions'][0]
 
-    seg = segment_volume(pmaps)
+    seg = segment_volume(pmaps, args.threshold)
     print(f'Saving results to: {out_file}')
     with h5py.File(out_file, 'w') as f:
         output_dataset = 'segmentation'

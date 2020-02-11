@@ -1,12 +1,19 @@
 import argparse
+import logging
 
 import h5py
 import numpy as np
+import sys
 from skimage import measure
 
-from unet2d.utils import get_logger
-
-logger = get_logger('Metrics')
+logger = logging.getLogger('Metrics')
+logger.setLevel(logging.INFO)
+# Logging to console
+stream_handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(
+    '%(asctime)s [%(threadName)s] %(levelname)s %(name)s - %(message)s')
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 
 class _AbstractAP:
@@ -63,16 +70,19 @@ class _AbstractAP:
             tp = len(true_positives)
             fp = len(false_positives)
             fn = len(false_negatives)
+            logger.info(f"TP: {tp}, FP: {fp}, FN: {fn}")
 
             recall = tp / (tp + fn)
             precision = tp / (tp + fp)
+            accuracy = tp / (tp + fp + fn)
             f1 = self._f1_score(precision, recall)
 
-            logger.info(f"IoU: {min_iou}, Precision: {precision}, Recall: {recall}, F1: {f1}")
+            logger.info(f"IoU: {min_iou}, Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1: {f1}")
 
             ROC.append((recall, precision))
 
         # sort points by recall
+        # TODO: plot ROC curve
         ROC = np.array(sorted(ROC, key=lambda t: t[0]))
         # return recall and precision values
         return list(ROC[:, 0]), list(ROC[:, 1])
@@ -158,9 +168,14 @@ class StandardAveragePrecision(_AbstractAP):
 
 def main():
     parser = argparse.ArgumentParser(description='Validation metrics')
-    parser.add_argument('--gt', type=str, required=True,
+    parser.add_argument('--gt', type=str, required=True, nargs='+',
                         help="path to the ground truth file containing the 'label' dataset")
-    parser.add_argument('--seg', type=int, required=True,
+    parser.add_argument('--gt-dataset', type=str, required=False, default='label',
+                        help="path to the ground truth file containing the 'label' dataset")
+
+    parser.add_argument('--seg', type=str, required=True, nargs='+',
+                        help="path to the segmentation file containing the 'segmentation' dataset")
+    parser.add_argument('--seg-dataset', type=str, required=False, default='segmentation',
                         help="path to the segmentation file containing the 'segmentation' dataset")
 
     args = parser.parse_args()
@@ -168,14 +183,16 @@ def main():
     # specify minimum instance size for
     sap = StandardAveragePrecision(min_instance_size=500)
 
-    with h5py.File(args.gt, 'r') as f:
-        gt = f['label'][...]
+    for gt, seg in zip(args.gt, args.seg):
+        logger.info(f'Running the metrics... Segmentation file: {seg}, ground truth: {gt}')
+        with h5py.File(gt, 'r') as f:
+            gt = f[args.gt_dataset][...]
 
-    with h5py.File(args.seg, 'r') as f:
-        seg = f['segmentation'][...]
+        with h5py.File(seg, 'r') as f:
+            seg = f[args.seg_dataset][...]
 
-    ap = sap(seg, gt)
-    logger.info(f'Area under ROC: {ap}')
+        ap = sap(seg, gt)
+        logger.info(f'Area under ROC: {ap}')
 
 
 if __name__ == '__main__':
