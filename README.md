@@ -32,22 +32,15 @@ conda activate embryo-seg
 git clone https://github.com/kreshuklab/vlad-nuclei.git
 ```
 below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
-4. Load models for the repository into the PlantSeg using GUI.
+
+4. Load models from `VLAD_NUCLEI_DIR/experiments/final` into the PlantSeg using the UI.
 ![Model load](https://user-images.githubusercontent.com/706781/74533911-fd02ce00-4f32-11ea-9a27-25176f008264.png)
 
-Please load the models from `VLAD_NUCLEI_DIR/experiments/final` into the PlantSeg.
-
-5. Run PlantSeg to init the config file
+7. Run segmentation using the PlantSeg
 ```bash
 plantseg --gui
 ```
-closing the PlantSeg window will trigger the popup 'Save Current Config', click 'Yes'
-6. Edit `~/.plantseg_models/configs/config_gui_last.yaml` and set `model_name` key to `unet_bce_dice_ab_boundary`
-7. Run PlantSeg
-```bash
-plantseg --gui
-```
-choose file to segment, set hyperparameters and Run the segmentation!
+choose file to segment, set hyperparameters and run the segmentation :rocket:
 
 For more info and troubleshooting see [PlantSeg documentation](https://github.com/hci-unihd/plant-seg).
 
