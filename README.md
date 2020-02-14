@@ -49,7 +49,7 @@ plantseg --gui
 ```
 choose file to segment, set hyperparameters and Run the segmentation!
 
-For more info see [PlantSeg documentation](https://github.com/hci-unihd/plant-seg).
+For more info and troubleshooting see [PlantSeg documentation](https://github.com/hci-unihd/plant-seg).
 
 
 ## Segmentation with command line scripts (advanced)
