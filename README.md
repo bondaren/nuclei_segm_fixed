@@ -32,11 +32,8 @@ conda activate embryo-seg
 git clone https://github.com/kreshuklab/vlad-nuclei.git
 ```
 below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
-4. Move model files to the plantseg directory
-```bash
-mkdir -p ~/.plantseg_models/unet_bce_dice_ab_boundary
-cp VLAD_NUCLEI_DIR/experiments/final/unet_bce_dice_ab_boundary/* ~/.plantseg_models/unet_bce_dice_ab_boundary
-```
+4. Load models for the repository into the PlantSeg using GUI.
+
 5. Run PlantSeg to init the config file
 ```bash
 plantseg --gui
