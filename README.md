@@ -40,7 +40,7 @@ below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
 ```bash
 plantseg --gui
 ```
-choose file to segment, set hyperparameters and run the segmentation :rocket:
+choose a file to segment (you can load tif files as well :beer:, not only H5), set hyperparameters and run the segmentation :rocket:
 
 For more info and troubleshooting see [PlantSeg documentation](https://github.com/hci-unihd/plant-seg).
 
