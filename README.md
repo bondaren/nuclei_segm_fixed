@@ -33,6 +33,9 @@ git clone https://github.com/kreshuklab/vlad-nuclei.git
 ```
 below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
 4. Load models for the repository into the PlantSeg using GUI.
+![Model load](https://user-images.githubusercontent.com/706781/74533911-fd02ce00-4f32-11ea-9a27-25176f008264.png)
+
+Please load the models from `VLAD_NUCLEI_DIR/experiments/final` into the PlantSeg.
 
 5. Run PlantSeg to init the config file
 ```bash
