@@ -20,14 +20,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TH seg')
     parser.add_argument('--pmaps', type=str, required=True, help='path to the network predictions')
     parser.add_argument("--threshold", type=float, default=0.9, help="nuclei mask threshold")
+    parser.add_argument('--channel', type=int, required=False, default=0, help='Nuclei pmaps channel')
     args = parser.parse_args()
 
     in_file = args.pmaps
     out_file = os.path.splitext(in_file)[0] + '_threshold.h5'
+    c = args.channel
 
     with h5py.File(in_file, 'r') as f:
         print(f'Extracting pmaps from: {in_file}')
-        pmaps = f['predictions'][0]
+        pmaps = f['predictions'][c]
 
     seg = segment_volume(pmaps, args.threshold)
     print(f'Saving results to: {out_file}')

@@ -33,10 +33,12 @@ git clone https://github.com/kreshuklab/vlad-nuclei.git
 ```
 below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
 
-4. Load models from `VLAD_NUCLEI_DIR/experiments/final` into the PlantSeg using the UI.
+4. Load models from `VLAD_NUCLEI_DIR/experiments/unet_bce_dice_ab_boundary` into the PlantSeg using the UI.
 ![Model load](https://user-images.githubusercontent.com/706781/74533911-fd02ce00-4f32-11ea-9a27-25176f008264.png)
 
-7. Run segmentation using the PlantSeg
+Node: `PlantSeg` currently works only with models predicting cell boundaries, so make sure to use **unet_bce_dice_ab_boundary** network.
+
+5. Run segmentation using the PlantSeg
 ```bash
 plantseg --gui
 ```
@@ -65,7 +67,7 @@ Activate conda environment:
 conda activate embryo-seg-cli
 ```
 
-Run network predictions on the Linux noded with a GPU:
+Run network predictions on the Linux node with a GPU:
 ```bash
 predict3dunet --config PATH_TO_CONFIG
 ```
@@ -76,23 +78,25 @@ and the `file_paths` key to point to the files on which to run the prediction (i
 
 For more detailed information of how to predict with `predict3dunet` see [pytorch-3dunet](https://github.com/wolny/pytorch-3dunet).
 
-
 For segmentation go to `VLAD_NUCLEI_DIR` with `cd VLAD_NUCLEI_DIR`.
 
 Wait for the prediction process to finish and then segment with one of the 3 strategies:
 1. Mutex Watershed:
+**Use unet_bce_dice_ab_nuclei_boundary_aff network for predictions**
 ```bash
 python segmentation/mws_segmentation.py --pmaps <PATH_TO_THE_NETWORK_PREDICTION_FILE> --mask --threshold 0.8 
 ```
 this will save the results in the same directory as `PATH_TO_THE_NETWORK_PREDICTION_FILE`, but with the suffix `_mws.h5`.
 2. Multicut:
+**Use unet_bce_dice_ab_nuclei_boundary network for predictions**
 ```bash
 python segmentation/mc_segmentation.py --pmaps <PATH_TO_THE_NETWORK_PREDICTION_FILE> --channel 1 
 ```
 this will save the results in the same directory as `PATH_TO_THE_NETWORK_PREDICTION_FILE`, but with the suffix `_mc.h5`.
 3. Thresholding + connected components
+**Use unet_bce_dice_ab_nuclei_boundary network for predictions**
 ```bash
-python segmentation/threshold_segmentation.py --pmaps <PATH_TO_THE_NETWORK_PREDICTION_FILE> --threshold 0.9
+python segmentation/threshold_segmentation.py --pmaps <PATH_TO_THE_NETWORK_PREDICTION_FILE> --threshold 0.8 --channel 0
 ```
 this will save the results in the same directory as `PATH_TO_THE_NETWORK_PREDICTION_FILE`, but with the suffix `_threshold.h5`.
 
@@ -111,6 +115,6 @@ E.g.:
 ```bash
 python utils/precision_recall.py --gt /home/vlad/EmbryoFiles/GT_Ab1_test.h5 --seg /home/vlad/EmbryoFiles/GT_Ab1_test_threshold.h5
 ```
-`LIST_OF_GROUND_TRUTH_FILES` and `LIST_OF_SEGMENTATION_FILES` must much. This will print out the precision/recall/accuracy values
-for each intersection-over-union threshold considered, as well as save the precision-recall plots in the current directory. 
+`LIST_OF_GROUND_TRUTH_FILES` and `LIST_OF_SEGMENTATION_FILES` must much. This will print out the precision/recall/f1/accuracy values
+for each intersection-over-union threshold considered, as well as save the precision-recall plots in the directory where `LIST_OF_SEGMENTATION_FILES` are.
 

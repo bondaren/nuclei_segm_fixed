@@ -1,10 +1,13 @@
 import argparse
 import logging
+import sys
+import os
 
 import h5py
-import numpy as np
-import sys
-from skimage import measure
+import matplotlib.pyplot as plt
+
+plt.ioff()
+plt.switch_backend('agg')
 
 logger = logging.getLogger('Metrics')
 logger.setLevel(logging.INFO)
@@ -15,156 +18,167 @@ formatter = logging.Formatter(
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+import numpy as np
+from skimage.metrics import contingency_table
 
-class _AbstractAP:
-    def __init__(self, iou_range=(0.5, 1.0), ignore_index=-1, min_instance_size=None):
-        self.iou_range = iou_range
-        self.ignore_index = ignore_index
-        self.min_instance_size = min_instance_size
 
-    def __call__(self, input, target):
-        raise NotImplementedError()
+def precision(tp, fp, fn):
+    return tp / (tp + fp) if tp > 0 else 0
 
-    def _calculate_average_precision(self, predicted, target, target_instances):
-        recall, precision = self._roc_curve(predicted, target, target_instances)
-        recall.insert(0, 0.0)  # insert 0.0 at beginning of list
-        recall.append(1.0)  # insert 1.0 at end of list
-        precision.insert(0, 0.0)  # insert 0.0 at beginning of list
-        precision.append(0.0)  # insert 0.0 at end of list
-        # make the precision(recall) piece-wise constant and monotonically decreasing
-        # by iterating backwards starting from the last precision value (0.0)
-        # see: https://www.jeremyjordan.me/evaluating-image-segmentation-models/ e.g.
-        for i in range(len(precision) - 2, -1, -1):
-            precision[i] = max(precision[i], precision[i + 1])
-        # compute the area under precision recall curve by simple integration of piece-wise constant function
-        ap = 0.0
-        for i in range(1, len(recall)):
-            ap += ((recall[i] - recall[i - 1]) * precision[i])
-        return ap
 
-    def _roc_curve(self, predicted, target, target_instances):
-        ROC = []
-        predicted, predicted_instances = self._filter_instances(predicted)
+def recall(tp, fp, fn):
+    return tp / (tp + fn) if tp > 0 else 0
 
-        # compute precision/recall curve points for various IoU values from a given range
-        for min_iou in np.arange(self.iou_range[0], self.iou_range[1], 0.1):
-            # initialize false negatives set
-            false_negatives = set(target_instances)
-            # initialize false positives set
-            false_positives = set(predicted_instances)
-            # initialize true positives set
-            true_positives = set()
 
-            for pred_label in predicted_instances:
-                target_label = self._find_overlapping_target(pred_label, predicted, target, min_iou)
-                if target_label is not None:
-                    # update TP, FP and FN
-                    if target_label == self.ignore_index:
-                        # ignore if 'ignore_index' is the biggest overlapping
-                        false_positives.discard(pred_label)
-                    else:
-                        true_positives.add(pred_label)
-                        false_positives.discard(pred_label)
-                        false_negatives.discard(target_label)
+def accuracy(tp, fp, fn):
+    return tp / (tp + fp + fn) if tp > 0 else 0
 
-            tp = len(true_positives)
-            fp = len(false_positives)
-            fn = len(false_negatives)
-            logger.info(f"TP: {tp}, FP: {fp}, FN: {fn}")
 
-            recall = tp / (tp + fn)
-            precision = tp / (tp + fp)
-            accuracy = tp / (tp + fp + fn)
-            f1 = self._f1_score(precision, recall)
+def f1(tp, fp, fn):
+    return (2 * tp) / (2 * tp + fp + fn) if tp > 0 else 0
 
-            logger.info(f"IoU: {min_iou}, Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1: {f1}")
 
-            ROC.append((recall, precision))
+def _relabel(input):
+    _, unique_labels = np.unique(input, return_inverse=True)
+    return unique_labels.reshape(input.shape)
 
-        # sort points by recall
-        # TODO: plot ROC curve
-        ROC = np.array(sorted(ROC, key=lambda t: t[0]))
-        # return recall and precision values
-        return list(ROC[:, 0]), list(ROC[:, 1])
 
-    def _find_overlapping_target(self, predicted_label, predicted, target, min_iou):
+def _iou_matrix(gt, seg):
+    # relabel gt and seg for smaller memory footprint of contingency table
+    gt = _relabel(gt)
+    seg = _relabel(seg)
+
+    # get number of overlapping pixels between GT and SEG
+    n_inter = contingency_table(gt, seg).A
+
+    # number of pixels for GT instances
+    n_gt = n_inter.sum(axis=1, keepdims=True)
+    # number of pixels for SEG instances
+    n_seg = n_inter.sum(axis=0, keepdims=True)
+
+    # number of pixels in the union between GT and SEG instances
+    n_union = n_gt + n_seg - n_inter
+
+    iou_matrix = n_inter / n_union
+    # make sure that the values are within [0,1] range
+    assert 0 <= np.min(iou_matrix) <= np.max(iou_matrix) <= 1
+
+    return iou_matrix
+
+
+def _filter_instances(input, min_instance_size):
+    """
+    Filters instances smaller than 'min_instance_size' by overriding them with 0-index
+    :param input: input instance segmentation
+    """
+    if min_instance_size is not None:
+        labels, counts = np.unique(input, return_counts=True)
+        for label, count in zip(labels, counts):
+            if count < min_instance_size:
+                logger.info(f'Ignoring instance label: {label}, size: {count}')
+                input[input == label] = 0
+    return input
+
+
+class SegmentationMetrics:
+    """
+    Computes precision, recall, accuracy, f1 score for a given ground truth and predicted segmentation.
+    Contingency table for a given ground truth and predicted segmentation is computed eagerly upon construction
+    of the instance of `SegmentationMetrics`.
+
+    Args:
+        gt (ndarray): ground truth segmentation
+        seg (ndarray): predicted segmentation
+    """
+
+    def __init__(self, gt, seg):
+        gt = _relabel(gt)
+        seg = _relabel(seg)
+        self.iou_matrix = _iou_matrix(gt, seg)
+
+    def metrics(self, iou_threshold):
         """
-        Return ground truth label which overlaps by at least 'min_iou' with a given input label 'p_label'
-        or None if such ground truth label does not exist.
+        Computes precision, recall, accuracy, f1 score at a given IoU threshold
         """
-        mask_predicted = predicted == predicted_label
-        overlapping_labels = target[mask_predicted]
-        labels, counts = np.unique(overlapping_labels, return_counts=True)
-        # retrieve the biggest overlapping label
-        target_label_ind = np.argmax(counts)
-        target_label = labels[target_label_ind]
-        # return target label if IoU greater than 'min_iou'; since we're starting from 0.5 IoU there might be
-        # only one target label that fulfill this criterion
-        mask_target = target == target_label
-        # return target_label if IoU > min_iou
-        if self._iou(mask_predicted, mask_target) > min_iou:
-            return target_label
-        return None
+        # ignore background
+        iou_matrix = self.iou_matrix[1:, 1:]
+        detection_matrix = (iou_matrix > iou_threshold).astype(np.uint8)
+        n_gt, n_seg = detection_matrix.shape
 
-    @staticmethod
-    def _iou(prediction, target):
-        """
-        Computes intersection over union
-        """
-        intersection = np.logical_and(prediction, target)
-        union = np.logical_or(prediction, target)
-        return np.nan_to_num(np.sum(intersection) / np.sum(union))
+        # if the iou_matrix is empty or all values are 0
+        trivial = min(n_gt, n_seg) == 0 or np.all(detection_matrix == 0)
+        if trivial:
+            tp = fp = fn = 0
+        else:
+            # count non-zero rows to get the number of TP
+            tp = np.count_nonzero(detection_matrix.sum(axis=1))
+            # count zero rows to get the number of FN
+            fn = n_gt - tp
+            # count zero columns to get the number of FP
+            fp = n_seg - np.count_nonzero(detection_matrix.sum(axis=0))
 
-    @staticmethod
-    def _f1_score(precision, recall):
-        return 2 * precision * recall / (precision + recall)
-
-    def _filter_instances(self, input):
-        """
-        Filters instances smaller than 'min_instance_size' by overriding them with 'ignore_index'
-        :param input: input instance segmentation
-        :return: tuple: (instance segmentation with small instances filtered, set of unique labels without the 'ignore_index')
-        """
-        if self.min_instance_size is not None:
-            labels, counts = np.unique(input, return_counts=True)
-            for label, count in zip(labels, counts):
-                if count < self.min_instance_size:
-                    mask = input == label
-                    input[mask] = self.ignore_index
-
-        labels = set(np.unique(input))
-        labels.discard(self.ignore_index)
-        return input, labels
-
-    @staticmethod
-    def _dt_to_cc(distance_transform, threshold):
-        """
-        Threshold a given distance_transform and returns connected components.
-        :param distance_transform: 3D distance transform matrix
-        :param threshold: threshold energy level
-        :return: 3D segmentation volume
-        """
-        boundary = (distance_transform > threshold).astype(np.uint8)
-        return measure.label(boundary, background=0, connectivity=1)
+        return {
+            'precision': precision(tp, fp, fn),
+            'recall': recall(tp, fp, fn),
+            'accuracy': accuracy(tp, fp, fn),
+            'f1': f1(tp, fp, fn)
+        }
 
 
-class StandardAveragePrecision(_AbstractAP):
-    def __init__(self, iou_range=(0.3, 1.0), ignore_index=0, min_instance_size=None, **kwargs):
-        super().__init__(iou_range, ignore_index, min_instance_size)
+class Accuracy:
+    """
+    Computes accuracy between ground truth and predicted segmentation a a given threshold value.
+    Defined as: AC = TP / (TP + FP + FN).
+    Kaggle DSB2018 calls it Precision, see:
+    https://www.kaggle.com/stkbailey/step-by-step-explanation-of-scoring-metric.
+    """
 
-    def __call__(self, input, target):
-        assert isinstance(input, np.ndarray) and isinstance(target, np.ndarray)
-        assert input.ndim == target.ndim == 3
+    def __init__(self, iou_threshold):
+        self.iou_threshold = iou_threshold
 
-        target, target_instances = self._filter_instances(target)
+    def __call__(self, input_seg, gt_seg):
+        metrics = SegmentationMetrics(gt_seg, input_seg).metrics(self.iou_threshold)
+        return metrics['accuracy']
 
-        return self._calculate_average_precision(input, target, target_instances)
 
+class AveragePrecision:
+    """
+    Average precision taken for the IoU range (0.5, 0.95) with a step of 0.05 as defined in:
+    https://www.kaggle.com/stkbailey/step-by-step-explanation-of-scoring-metric
+    """
 
-# Alternatively
-# 1. compute IoU Matrix (slow) - dump somewhere after computation to avoid recomputing
-# 2. compute precision/recall curve for a range of IoU
-# 3. compute area under curve
+    def __init__(self, out_precision_recall=None):
+        self.iou_range = np.linspace(0.50, 0.95, 10)
+        self.out_precision_recall = out_precision_recall
+
+    def __call__(self, input_seg, gt_seg):
+        logger.info('Computing contingency table...')
+        # compute contingency_table
+        sm = SegmentationMetrics(gt_seg, input_seg)
+        # compute accuracy for each threshold
+        acc = []
+        pr_rec = []
+        for iou in self.iou_range:
+            metrics = sm.metrics(iou)
+            logger.info(f"IoU: {iou}. Metrics: {metrics}")
+            acc.append(metrics['accuracy'])
+            pr_rec.append((metrics['recall'], metrics['precision']))
+
+        self._save_precision_recall(pr_rec)
+        # return the average
+        return np.mean(acc)
+
+    def _save_precision_recall(self, precision_recall):
+        plt.figure(figsize=(20, 20))
+        recall, precision = zip(*precision_recall)
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+
+        plt.plot(recall, precision, '-ok')
+
+        plt.savefig(self.out_precision_recall)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Validation metrics')
@@ -178,21 +192,31 @@ def main():
     parser.add_argument('--seg-dataset', type=str, required=False, default='segmentation',
                         help="path to the segmentation file containing the 'segmentation' dataset")
 
+    parser.add_argument('--min-size', type=int, required=False, default=500,
+                        help="Minimum instance size to be considered for AveragePrecision score")
+
     args = parser.parse_args()
 
-    # specify minimum instance size for
-    sap = StandardAveragePrecision(min_instance_size=500)
-
-    for gt, seg in zip(args.gt, args.seg):
-        logger.info(f'Running the metrics... Segmentation file: {seg}, ground truth: {gt}')
-        with h5py.File(gt, 'r') as f:
+    for gt_f, seg_f in zip(args.gt, args.seg):
+        logger.info(f'Running the metrics... Segmentation file: {seg_f}, ground truth: {gt_f}')
+        with h5py.File(gt_f, 'r') as f:
             gt = f[args.gt_dataset][...]
 
-        with h5py.File(seg, 'r') as f:
+        with h5py.File(seg_f, 'r') as f:
             seg = f[args.seg_dataset][...]
 
-        ap = sap(seg, gt)
-        logger.info(f'Area under ROC: {ap}')
+        ## filter small instances
+        logger.info(f'Filtering ground truth instances smaller than: {args.min_size}')
+        gt = _filter_instances(gt, args.min_size)
+        logger.info(f'Filtering segmentation instances smaller than: {args.min_size}')
+        seg = _filter_instances(seg, args.min_size)
+
+        ## output path for the precision-recall curve
+        out_path = os.path.splitext(seg_f)[0] + '_precision-recall.png'
+        ap = AveragePrecision(out_path)
+
+        ap = ap(seg, gt)
+        logger.info(f'Average Precision score: {ap}')
 
 
 if __name__ == '__main__':
