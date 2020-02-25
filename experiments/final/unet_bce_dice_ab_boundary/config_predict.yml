@@ -19,7 +19,7 @@ model:
 loaders:
   batch_size: 1
   # mirror pad the raw data for sharper prediction near the boundaries of the volume
-  mirror_padding: (16, 32, 32)
+  mirror_padding: [16, 32, 32]
   # path to the raw data within the H5
   raw_internal_path: raw
   # how many subprocesses to use for data loading
