@@ -1,4 +1,5 @@
 import argparse
+import csv
 import logging
 import sys
 import os
@@ -147,9 +148,10 @@ class AveragePrecision:
     https://www.kaggle.com/stkbailey/step-by-step-explanation-of-scoring-metric
     """
 
-    def __init__(self, out_precision_recall=None):
-        self.iou_range = np.linspace(0.50, 0.95, 10)
+    def __init__(self, out_precision_recall=None, out_csv=None):
+        self.iou_range = np.linspace(0.5, 0.95, 10)
         self.out_precision_recall = out_precision_recall
+        self.out_csv = out_csv
 
     def __call__(self, input_seg, gt_seg):
         logger.info('Computing contingency table...')
@@ -157,14 +159,25 @@ class AveragePrecision:
         sm = SegmentationMetrics(gt_seg, input_seg)
         # compute accuracy for each threshold
         acc = []
-        pr_rec = []
+
+        # compute average precision
         for iou in self.iou_range:
             metrics = sm.metrics(iou)
             logger.info(f"IoU: {iou}. Metrics: {metrics}")
             acc.append(metrics['accuracy'])
+
+
+
+        pr_rec = []
+        metric_table = []
+        # compute precision-result curve
+        for iou in np.linspace(0.0, 0.95, 20):
+            metrics = sm.metrics(iou)
+            metric_table.append(metrics)
             pr_rec.append((metrics['recall'], metrics['precision']))
 
         self._save_precision_recall(pr_rec)
+        self._save_csv(metric_table)
         # return the average
         return np.mean(acc)
 
@@ -183,6 +196,15 @@ class AveragePrecision:
         plt.plot(recall, precision, '-ok')
 
         plt.savefig(self.out_precision_recall)
+
+    def _save_csv(self, results):
+        assert len(results) > 0
+        keys = results[0].keys()
+        print(f'Saving CSV results to {self.out_csv}...')
+        with open(self.out_csv, "w") as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(results)
 
 
 def main():
@@ -217,8 +239,9 @@ def main():
         seg = _filter_instances(seg, args.min_size)
 
         ## output path for the precision-recall curve
-        out_path = os.path.splitext(seg_f)[0] + '_precision-recall.png'
-        ap = AveragePrecision(out_path)
+        out_pr_rec = os.path.splitext(seg_f)[0] + '_precision-recall.png'
+        out_csv = os.path.splitext(seg_f)[0] + '_precision-recall.csv'
+        ap = AveragePrecision(out_pr_rec, out_csv)
 
         ap = ap(seg, gt)
         logger.info(f'Average Precision score: {ap}')
