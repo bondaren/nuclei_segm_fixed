@@ -172,8 +172,13 @@ class AveragePrecision:
         plt.figure(figsize=(20, 20))
         recall, precision = zip(*precision_recall)
 
+        logger.info(f'Recall values: {recall}. Precision values: {precision}')
+
         plt.xlabel('Recall')
         plt.ylabel('Precision')
+
+        plt.xlim(0, 1)
+        plt.ylim(0, 1)
 
         plt.plot(recall, precision, '-ok')
 
