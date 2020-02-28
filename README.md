@@ -59,7 +59,7 @@ below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
 
 Create a new conda environment:
 ```bash
-conda create -n embryo-seg-cli --c cpape -c awolny -c conda-forge elf pytorch-3dunet
+conda create -n embryo-seg-cli --c cpape -c awolny -c conda-forge affogato elf pytorch-3dunet
 ```
 
 Activate conda environment:
