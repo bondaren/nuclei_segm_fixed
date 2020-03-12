@@ -1,14 +1,14 @@
+import argparse
 import os
-from skimage import measure
+import sys
 
 import h5py
 import z5py
-
 from paintera_tools import convert_to_paintera_format
 from paintera_tools import set_default_shebang, set_default_block_shape
 
 
-def convert_cremi(input_path, with_assignments, tmp_folder, convert_to_label_multisets=False):
+def convert_cremi(input_path, with_assignments, tmp_folder, res, convert_to_label_multisets=False):
     """ Convert segmentation to paintera format.
 
     You can donwload the example data from
@@ -17,6 +17,8 @@ def convert_cremi(input_path, with_assignments, tmp_folder, convert_to_label_mul
     Arguments:
         input_path [str]: path to n5 file with raw data and segmentation
         with_assignments [bool]: convert to format with / without fragment-segment assignment
+        tmp_folder [str]: folder to store tempory data
+        res [list]: voxel size (ZYX)
     """
 
     # NOTE: the raw data needs to be multiscale, i.e. 'raw_key' needs to be a group with
@@ -41,7 +43,7 @@ def convert_cremi(input_path, with_assignments, tmp_folder, convert_to_label_mul
     out_key = 'paintera'
 
     # shebang to environment with all necessary dependencies
-    shebang = '#! /home/adrian/miniconda3/envs/cluster_env/bin/python'
+    shebang = f'#! {sys.executable}'
     set_default_shebang(shebang)
     set_default_block_shape([32, 256, 256])
 
@@ -50,7 +52,6 @@ def convert_cremi(input_path, with_assignments, tmp_folder, convert_to_label_mul
     else:
         restrict_sets = []
 
-    res = [1, 0.19, 0.19]
     convert_to_paintera_format(input_path, raw_key, in_key, out_key,
                                label_scale=0, resolution=res,
                                tmp_folder=tmp_folder, target='local', max_jobs=4, max_threads=8,
@@ -61,15 +62,29 @@ def convert_cremi(input_path, with_assignments, tmp_folder, convert_to_label_mul
 
 
 if __name__ == '__main__':
-    in_file = '/home/adrian/workspace/ilastik-datasets/Vladyslav/GT_instances_05_12/CT_Ab2_train.h5'
+    parser = argparse.ArgumentParser(description='Convert H5 to Paintera format')
+    parser.add_argument('--file', type=str, required=True, help="Path to the H5 to be conveted")
+    parser.add_argument('--vsize', type=float, nargs='+', help='Voxel size (ZYX)')
+    parser.add_argument('--rawds', type=str, required=False, default='raw',
+                        help="path to the raw dataset")
+    parser.add_argument('--labelds', type=str, required=False, default='label',
+                        help="path to the label dataset")
+
+    args = parser.parse_args()
+
+    res = args.vsize
+    assert len(res) == 3, f'Incorrect voxel size: {res}'
+
+    in_file = args.file
     n5_path = os.path.splitext(in_file)[0] + '.n5'
 
-    print(f'Raw path: {in_file}')
+    print(f'H5 path: {in_file}')
     print(f'N5 path: {n5_path}')
+    print(f'Res: {res}')
 
     with h5py.File(in_file, 'r') as g:
-        raw = g['raw'][...]
-        label = g['dt_watershed_0'][...]
+        raw = g[args.rawds][...]
+        label = g[args.labelds][...]
         label = label.astype('uint64')
 
     with z5py.File(n5_path) as f:
@@ -77,6 +92,6 @@ if __name__ == '__main__':
         ds.attrs['maxId'] = int(label.max())
         f.create_dataset('raw/s0', data=raw, compression='gzip', chunks=(64, 64, 64))
 
-    tmp_folder = './tmp_convert'
+    tmp_folder = os.path.splitext(in_file)[0] + '_tmp_convert'
     with_assignments = False
-    convert_cremi(n5_path, with_assignments, tmp_folder)
+    convert_cremi(n5_path, with_assignments, tmp_folder, res)

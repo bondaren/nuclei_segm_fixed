@@ -59,7 +59,7 @@ below `VLAD_NUCLEI_DIR` will refer to the directory where the repo was cloned.
 
 Create a new conda environment:
 ```bash
-conda create -n embryo-seg-cli --c cpape -c awolny -c conda-forge affogato elf pytorch-3dunet
+conda create -n embryo-seg-cli -c cpape -c awolny -c conda-forge affogato elf pytorch-3dunet
 ```
 
 Activate conda environment:
@@ -117,4 +117,31 @@ python utils/precision_recall.py --gt /home/vlad/EmbryoFiles/GT_Ab1_test.h5 --se
 ```
 `LIST_OF_GROUND_TRUTH_FILES` and `LIST_OF_SEGMENTATION_FILES` must much. This will print out the precision/recall/f1/accuracy values
 for each intersection-over-union threshold considered, as well as save the precision-recall plots in the directory where `LIST_OF_SEGMENTATION_FILES` are.
+
+
+## Paintera file conversion
+Create new conda environment:
+```bash
+conda create -n paintera-cli -c cpape -c conda-forge paintera_tools
+```
+Activate conda env:
+```bash
+conda activate paintera-cli
+```
+
+Convert H5 to paintera format:
+```bash
+python utils/paintera_convert.py --file INPUT_H5_FILE --vsize VOXEL_SIZE
+```
+e.g.:
+```bash
+python utils/paintera_convert.py --file /home/vlad/Data/file1.h5 --vsize 1.0 0.19 0.19
+```
+will create an output H5 file `/home/vlad/Data/file1.h5`.
+
+WARN: When proofreading make sure to load **paintera** dataset instead of **label** dataset.
+After proofreading the file with Paintera, you might want to convert it back to H5:
+```bash
+python utils/paintera_serialize.py --file INPUT_N5_FILE
+```
 
